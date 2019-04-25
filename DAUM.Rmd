@@ -1,0 +1,39 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+2016147575 컴퓨터과학과 김재인  
+맥 환경에서 진행  
+--------------------------------------------------------------------------------  
+다음 메인 페이지에서 실시간 검색어 수집  
+--------------------------------------------------------------------------------  
+  
+필요한 패키지를 불러옵니다. 
+```{r}
+library(tidyverse)
+library(httr)
+library(rvest)
+```
+
+HTTP 요청을 실행합니다. 
+```{r}
+res <- GET(url = 'https://www.daum.net/')
+```
+
+응답 결과를 확인합니다. 
+```{r}
+print(x = res)
+```
+
+실시간 검색어를 추출/출력합니다. 
+```{r}
+searchWords <- res %>% 
+  read_html() %>% 
+  html_nodes(css = 'div.realtime_part > ol > li > div > div:nth-child(1) > span.txt_issue > a') %>% 
+  html_text(trim = TRUE)
+
+print(x = searchWords)
+```

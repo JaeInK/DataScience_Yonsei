@@ -1,0 +1,110 @@
+---
+title: "Customer.csv 분석 보고서"
+author: "jaein"
+date: "4/3/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("/Users/jaein/Desktop")
+data <- read.csv("customer.csv")
+str(data)
+```
+
+결측치 확인
+```{r}
+sum(colSums(is.na(data)))
+```
+
+customerID 지우기.
+```{r}
+data = data[,-1]
+str(data)
+```
+
+Imbalance?
+```{r}
+table(table(data$Churn))
+```
+
+SMOTE ROSE를 통해 해결
+```{r}
+library("ROSE")
+data.rose = ROSE(Churn ~ . ,data=data,seed=1)$data
+table(data.rose$Churn)
+data = data.rose
+```
+
+Training / Test 나누기
+```{r}
+library(caret)
+set.seed(2016147575)
+index <- createDataPartition(data$Churn,p=0.7,list=F)
+train <- data[index,]
+test <- data[-index,]
+```
+
+Logistic Regression
+```{r}
+logistic <- glm(data$Churn~., data=data, family = binomial)
+summary(logistic)
+```
+
+```{r}
+library(MASS)
+stepLogistic<- stepAIC(logistic, direction="both")
+summary(stepLogistic)
+```
+
+Confusion Matrix
+```{r}
+library(e1071)
+pdata<-predict(logistic, newdata= test, type="response")
+p = ifelse(pdata>0.5,"Yes","No")
+p<-as.factor(p)
+conf = confusionMatrix(data = p, reference=test$Churn)
+```
+
+Precision, Recall, F1
+```{r}
+precision <- conf$byClass['Pos Pred Value']
+recall <- conf$byClass['Sensitivity']
+f1.score <- (2 * precision * recall) / (precision + recall)
+rbind(precision,recall,f1.score)
+```
+
+
+AUC of Training
+```{r}
+library(PRROC)
+library(glmnet)
+library(gridExtra)
+library(ROCR)
+library(gbm)
+library(rpart)
+library(boot)
+p = predict(logistic, newdata=train, type="response")
+pr = prediction(p, train$Churn)
+prf = performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+auc = performance(pr, measure = "auc")
+auc = auc@y.values[[1]]
+auc
+```
+
+
+AUC of Test
+```{r}
+p = predict(logistic, newdata=test, type="response")
+pr = prediction(p, test$Churn)
+prf = performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+auc = performance(pr, measure = "auc")
+auc = auc@y.values[[1]]
+auc
+```
+

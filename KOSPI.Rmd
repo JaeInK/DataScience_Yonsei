@@ -1,0 +1,39 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+2016147575 컴퓨터과학과 김재인    
+맥 환경에서 진행    
+--------------------------------------------------------------------------------   
+네이버 증권 국내증시 KOSPI 페이지에서 상단에 있는 표 수집  
+--------------------------------------------------------------------------------    
+  
+필요한 패키지를 불러옵니다. 
+```{r}
+library(tidyverse)
+library(httr)
+library(rvest)
+```
+
+HTTP 요청을 실행합니다. 
+```{r}
+res <- GET(url = 'https://finance.naver.com/sise/sise_index.nhn?code=KOSPI')
+```
+
+응답 결과를 확인합니다. 
+```{r}
+print(x = res)
+```
+
+표를 수집하고 출력합니다.
+```{r}
+tbl <- res %>% 
+  read_html(encoding='EUC-KR') %>% 
+  html_node(css = 'table.table_kos_index') %>% 
+  html_table(fill = TRUE)
+
+glimpse(x = tbl)
+```
